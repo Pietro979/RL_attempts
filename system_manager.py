@@ -1,8 +1,7 @@
 from states_generator import SystemGenerator
 
 
-
-class SystemManager:
+class SystemManager():
     def __init__(self):
         self.generator = SystemGenerator()
         self.system = self.generator.system
@@ -36,8 +35,8 @@ class SystemManager:
                 # print("The state contains a bug.")
                 return 2
             else:
-                self.actual_state = self.actual_actions[action]
                 self.previous_state = self.actual_state
+                self.actual_state = self.actual_actions[action]
                 self.actual_actions = self.system[self.actual_state]['actions']
                 return 0
 
@@ -53,3 +52,5 @@ class SystemManager:
             self.actual_state = state
             self.actual_actions = self.system[self.actual_state]['actions']
             return 0
+
+

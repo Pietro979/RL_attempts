@@ -106,7 +106,7 @@ class BugCreator:
             [key for value in self.system.values() for key in value['actions'].keys()],
             number_of_bugs_in_actions)
         self.list_of_bugs = list_of_states_with_bugs + list_of_actions_with_bugs
-        print(self.list_of_bugs)
+        self.print_all_bugs()
         return self.list_of_bugs
 
     def print_all_bugs(self):
