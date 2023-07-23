@@ -4,8 +4,8 @@ import numpy as np
 import pygame
 
 import gymnasium as gym
-from gymnasium import spaces
-from system_manager import SystemManager
+from gym import spaces
+from .system_manager import SystemManager
 
 LIST_OF_ALREADY_PERFORMED_ACTIONS = []
 IS_REUSED = None
@@ -47,27 +47,45 @@ def action(list_of_actions):
 class WebPageTesterEnv(gym.Env):
     def __init__(self):
         self.sm = SystemManager()
-        self._agent_location = self.sm.actual_state
-        self._action_space = self.sm.list_all_possible_actions_in_current_state()
+        self.action_space = spaces.Discrete(len(self.sm.all_actions))
+        self.observation_space = spaces.Discrete(len(self.sm.list_all_states()))
         self.discovered_bugs = []
+        self.obs_mapper = self.observation_mapper()
+        self.act_mapper = self.action_mapper()
+        self._agent_location = self.obs_mapper[self.sm.actual_state]
+
+    def action_mapper(self):
+        act_mapper = {}
+        for index, value in enumerate(self.sm.all_actions):
+            act_mapper[index] = value
+        return act_mapper
+
+
+    def observation_mapper(self):
+        obs_mapper = {}
+        for index, value in enumerate(self.sm.list_all_states()):
+            obs_mapper[value] = index
+        return obs_mapper
 
     def sample(self):
-        actions = self._action_space
-        action_to_perform = action(actions)
+        all_possible_actions_in_current_state = self.sm.list_all_possible_actions_in_current_state()
+        all_possible_actions_in_current_state_mapped = [key for key, value in self.act_mapper.items() if value in all_possible_actions_in_current_state]
+        action_to_perform_mapped = random.choice(all_possible_actions_in_current_state_mapped)
+        action_to_perform = self.act_mapper[action_to_perform_mapped]
+        # action_to_perform = actions.sample()
         return action_to_perform
 
     # Returns next step, reward, ...
     def _get_obs(self):
         self._agent_location = self.sm.actual_state
-        self._action_space = self.sm.list_all_possible_actions_in_current_state()
+        self.action_space = spaces.Discrete(len(self.sm.list_all_possible_actions_in_current_state()))
         return {"Actual state": self._agent_location}
 
     def _get_info(self):
-        self._agent_location = self.sm.actual_state
-        self._action_space = self.sm.list_all_possible_actions_in_current_state()
+        # self._agent_location = self.sm.actual_state
+        # self.action_space = spaces.Space(self.sm.list_all_possible_actions_in_current_state())
         return {"Actual state": self._agent_location,
-                "Previous state": self.sm.previous_state,
-                "Actions to perform": self._action_space}
+                "Previous state": self.sm.previous_state}
 
     def reset(self, seed=None, options = None):
         super().reset(seed=seed)
@@ -76,7 +94,6 @@ class WebPageTesterEnv(gym.Env):
             if state not in self.sm.list_of_bugs:
                 self.sm.force(state)
 
-        self._agent_location = self.sm.actual_state
         observation = self._get_obs()
         info = self._get_info()
 
